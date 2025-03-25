@@ -7,6 +7,8 @@ interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
   size?: 'sm' | 'md' | 'lg';
   hoverEffect?: 'scale' | 'glow' | 'none';
   children: React.ReactNode;
+  as?: React.ElementType;
+  to?: string;
 }
 
 const AnimatedButton: React.FC<AnimatedButtonProps> = ({
@@ -15,6 +17,8 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   hoverEffect = 'scale',
   className,
   children,
+  as: Component = 'button',
+  to,
   ...props
 }) => {
   const baseStyles = "relative inline-flex items-center justify-center font-medium rounded-xl transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary";
@@ -38,8 +42,10 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
     none: ""
   };
   
+  const componentProps = Component !== 'button' ? { to, ...props } : props;
+  
   return (
-    <button
+    <Component
       className={cn(
         baseStyles,
         variantStyles[variant],
@@ -47,12 +53,12 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         hoverEffectStyles[hoverEffect],
         className
       )}
-      {...props}
+      {...componentProps}
     >
       <span className="relative z-10 flex items-center gap-2">
         {children}
       </span>
-    </button>
+    </Component>
   );
 };
 

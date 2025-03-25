@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Edit, Trash2, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, AlertCircle, Package } from 'lucide-react';
 import AnimatedButton from '../ui/AnimatedButton';
 
 export interface Product {

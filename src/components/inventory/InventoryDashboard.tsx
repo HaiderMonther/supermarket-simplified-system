@@ -1,93 +1,73 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Package, Filter, SortAsc, SortDesc, Grid, List, PlusCircle, 
-  Search, AlertTriangle 
+  Search, AlertTriangle, Loader2
 } from 'lucide-react';
 import ProductCard, { Product } from './ProductCard';
 import AnimatedButton from '../ui/AnimatedButton';
-
-// Sample data
-const sampleProducts: Product[] = [
-  {
-    id: '1',
-    name: 'حليب كامل الدسم',
-    barcode: '6210000123451',
-    price: 5.99,
-    cost: 4.20,
-    quantity: 45,
-    category: 'ألبان',
-    minStock: 10
-  },
-  {
-    id: '2',
-    name: 'أرز بسمتي',
-    barcode: '6210000123452',
-    price: 29.99,
-    cost: 22.50,
-    quantity: 30,
-    category: 'أساسيات',
-    minStock: 5
-  },
-  {
-    id: '3',
-    name: 'معجون أسنان',
-    barcode: '6210000123453',
-    price: 12.50,
-    cost: 8.75,
-    quantity: 3,
-    category: 'العناية الشخصية',
-    minStock: 5
-  },
-  {
-    id: '4',
-    name: 'زيت زيتون',
-    barcode: '6210000123454',
-    price: 35.75,
-    cost: 28.60,
-    quantity: 15,
-    category: 'زيوت وسمن',
-    minStock: 8
-  },
-  {
-    id: '5',
-    name: 'مناديل ورقية',
-    barcode: '6210000123455',
-    price: 8.99,
-    cost: 6.50,
-    quantity: 22,
-    category: 'منزلية',
-    minStock: 10
-  },
-  {
-    id: '6',
-    name: 'تفاح أحمر',
-    barcode: '6210000123456',
-    price: 10.99,
-    cost: 7.80,
-    quantity: 2,
-    category: 'فواكه',
-    minStock: 5
-  }
-];
+import { toast } from 'sonner';
+import { productsApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ProductFormDialog from './ProductFormDialog';
 
 const InventoryDashboard: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>(sampleProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
+  
+  const queryClient = useQueryClient();
+  
+  // استخدام React Query لجلب المنتجات
+  const { 
+    data: productsResponse,
+    isLoading, 
+    isError,
+    error
+  } = useQuery({
+    queryKey: ['products'],
+    queryFn: productsApi.getAll
+  });
+
+  // تهيئة المنتجات من الاستجابة
+  const products = productsResponse?.success 
+    ? productsResponse.data || [] 
+    : [];
+  
+  // إعداد mutations لحذف المنتجات
+  const deleteProductMutation = useMutation({
+    mutationFn: (id: string) => productsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('تم حذف المنتج بنجاح');
+    },
+    onError: (error) => {
+      toast.error(`فشل حذف المنتج: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
+    }
+  });
   
   // Handle product edit
   const handleEditProduct = (product: Product) => {
     console.log('Edit product:', product);
-    // This would open a modal or navigate to edit page in a real app
+    setSelectedProduct(product);
+    setFormDialogOpen(true);
+  };
+  
+  // Handle add new product
+  const handleAddProduct = () => {
+    setSelectedProduct(undefined);
+    setFormDialogOpen(true);
   };
   
   // Handle product delete
   const handleDeleteProduct = (id: string) => {
     console.log('Delete product:', id);
     // This would show a confirmation dialog in a real app
-    setProducts(prevProducts => prevProducts.filter(product => product.id !== id));
+    if (window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+      deleteProductMutation.mutate(id);
+    }
   };
   
   // Filter products based on search and low stock filter
@@ -106,6 +86,25 @@ const InventoryDashboard: React.FC = () => {
   // Get low stock count
   const lowStockCount = products.filter(p => p.quantity <= p.minStock).length;
   
+  // إظهار رسالة خطأ عند فشل جلب البيانات
+  if (isError) {
+    return (
+      <div className="w-full px-4 py-6 text-center" style={{ direction: 'rtl' }}>
+        <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">حدث خطأ</h2>
+        <p className="text-muted-foreground mb-6">
+          {error instanceof Error ? error.message : 'فشل في تحميل بيانات المخزون'}
+        </p>
+        <AnimatedButton 
+          variant="primary"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['products'] })}
+        >
+          إعادة المحاولة
+        </AnimatedButton>
+      </div>
+    );
+  }
+  
   return (
     <div className="w-full px-4 py-6" style={{ direction: 'rtl' }}>
       {/* Inventory Dashboard Header */}
@@ -123,6 +122,7 @@ const InventoryDashboard: React.FC = () => {
         <AnimatedButton
           variant="primary"
           className="flex items-center gap-2 self-end md:self-center"
+          onClick={handleAddProduct}
         >
           <PlusCircle className="h-4 w-4" />
           <span>إضافة منتج</span>
@@ -140,7 +140,7 @@ const InventoryDashboard: React.FC = () => {
             highlight: lowStockCount > 0
           },
           { title: 'القيمة الإجمالية', value: `${products.reduce((sum, p) => sum + (p.cost * p.quantity), 0).toFixed(2)} ر.س`, icon: <Package className="h-5 w-5 text-primary" /> },
-          { title: 'متوسط الربح', value: `${(products.reduce((sum, p) => sum + ((p.price - p.cost) / p.price * 100), 0) / products.length).toFixed(1)}%`, icon: <Package className="h-5 w-5 text-primary" /> }
+          { title: 'متوسط الربح', value: `${products.length > 0 ? (products.reduce((sum, p) => sum + ((p.price - p.cost) / p.price * 100), 0) / products.length).toFixed(1) : 0}%`, icon: <Package className="h-5 w-5 text-primary" /> }
         ].map((stat, i) => (
           <div 
             key={i} 
@@ -149,7 +149,9 @@ const InventoryDashboard: React.FC = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-muted-foreground">{stat.title}</p>
-                <p className="text-2xl font-semibold mt-1">{stat.value}</p>
+                <p className="text-2xl font-semibold mt-1">
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : stat.value}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 {stat.icon}
@@ -204,8 +206,16 @@ const InventoryDashboard: React.FC = () => {
         </div>
       </div>
       
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <span className="mr-2 text-lg">جاري التحميل...</span>
+        </div>
+      )}
+      
       {/* Products Grid */}
-      {filteredProducts.length > 0 ? (
+      {!isLoading && filteredProducts.length > 0 ? (
         <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-1'} gap-4`}>
           {filteredProducts.map(product => (
             <ProductCard
@@ -216,7 +226,7 @@ const InventoryDashboard: React.FC = () => {
             />
           ))}
         </div>
-      ) : (
+      ) : !isLoading && (
         <div className="text-center py-16 bg-secondary/30 rounded-xl">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium">لا توجد منتجات</h3>
@@ -227,12 +237,19 @@ const InventoryDashboard: React.FC = () => {
                 ? 'لا توجد منتجات منخفضة المخزون' 
                 : 'أضف منتجات لتظهر هنا'}
           </p>
-          <AnimatedButton variant="outline" className="mt-4">
+          <AnimatedButton variant="outline" className="mt-4" onClick={handleAddProduct}>
             <PlusCircle className="h-4 w-4 mr-1" />
             <span>إضافة منتج جديد</span>
           </AnimatedButton>
         </div>
       )}
+      
+      {/* Product Form Dialog */}
+      <ProductFormDialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        initialData={selectedProduct}
+      />
     </div>
   );
 };

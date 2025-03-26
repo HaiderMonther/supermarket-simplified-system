@@ -12,6 +12,21 @@ const apiClient = axios.create({
   },
 });
 
+// Add an interceptor to include the JWT token in all requests
+apiClient.interceptors.request.use((config) => {
+  // Get token from localStorage
+  const token = localStorage.getItem('jwt_token');
+  
+  // If token exists, add it to the authorization header
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 // Define response types
 export interface ApiResponse<T> {
   success: boolean;
@@ -28,7 +43,17 @@ export const handleApiError = (error: any): never => {
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      errorMessage = error.response.data?.message || `خطأ: ${error.response.status}`;
+      
+      // Check for authentication errors (401, 403)
+      if (error.response.status === 401) {
+        errorMessage = 'غير مصرح: الرجاء تسجيل الدخول مرة أخرى';
+        // Optionally redirect to login or clear token
+        localStorage.removeItem('jwt_token');
+      } else if (error.response.status === 403) {
+        errorMessage = 'ممنوع: ليس لديك صلاحية للوصول إلى هذا المورد';
+      } else {
+        errorMessage = error.response.data?.message || `خطأ: ${error.response.status}`;
+      }
     } else if (error.request) {
       // The request was made but no response was received
       errorMessage = 'لم يتم استلام استجابة من الخادم، تأكد من تشغيل الخادم على المنفذ 2000';
@@ -113,9 +138,33 @@ export const productsApiService = {
   }
 };
 
+// Helper functions for auth
+export const authService = {
+  // Set JWT token in localStorage
+  setToken: (token: string) => {
+    localStorage.setItem('jwt_token', token);
+  },
+  
+  // Get JWT token from localStorage
+  getToken: () => {
+    return localStorage.getItem('jwt_token');
+  },
+  
+  // Clear JWT token from localStorage
+  clearToken: () => {
+    localStorage.removeItem('jwt_token');
+  },
+  
+  // Check if user is authenticated
+  isAuthenticated: () => {
+    return !!localStorage.getItem('jwt_token');
+  }
+};
+
 // Export a default API object that contains all API services
 const api = {
   products: productsApiService,
+  auth: authService
   // We can add other API services here in the future (categories, sales, users, etc.)
 };
 

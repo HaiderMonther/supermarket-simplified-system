@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { Product } from '@/components/inventory/ProductCard';
 import { API_CONFIG } from '@/config/api';
@@ -138,6 +137,61 @@ export const productsApiService = {
   }
 };
 
+// Auth API service
+export const authApiService = {
+  // Login user and get JWT token
+  login: async (username: string, password: string): Promise<{ success: boolean; token?: string; message?: string }> => {
+    try {
+      console.log('Logging in user:', username);
+      const response = await apiClient.post('/auth/login', { username, password });
+      
+      if (response.data.token) {
+        return {
+          success: true,
+          token: response.data.token
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'فشل تسجيل الدخول'
+        };
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+      
+      if (axios.isAxiosError(error) && error.response) {
+        // Handle specific login errors
+        if (error.response.status === 401) {
+          return {
+            success: false,
+            message: 'اسم المستخدم أو كلمة المرور غير صحيحة'
+          };
+        }
+      }
+      
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'حدث خطأ أثناء تسجيل الدخول'
+      };
+    }
+  },
+  
+  // Logout user
+  logout: async (): Promise<boolean> => {
+    try {
+      // You can add a logout API call here if your backend requires it
+      // await apiClient.post('/auth/logout');
+      
+      // Clear the token regardless of API call
+      localStorage.removeItem('jwt_token');
+      return true;
+    } catch (error) {
+      console.error('Error logging out:', error);
+      return false;
+    }
+  }
+};
+
 // Helper functions for auth
 export const authService = {
   // Set JWT token in localStorage
@@ -158,6 +212,16 @@ export const authService = {
   // Check if user is authenticated
   isAuthenticated: () => {
     return !!localStorage.getItem('jwt_token');
+  },
+  
+  // Login user
+  login: async (username: string, password: string) => {
+    return authApiService.login(username, password);
+  },
+  
+  // Logout user
+  logout: async () => {
+    return authApiService.logout();
   }
 };
 

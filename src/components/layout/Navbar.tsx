@@ -1,12 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingCart, Package, BarChart2 } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, ShoppingCart, Package, BarChart2, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import api from '@/lib/apiService';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +32,15 @@ const Navbar: React.FC = () => {
     { name: 'المبيعات', path: '/sales', icon: <ShoppingCart className="w-4 h-4" /> },
   ];
 
+  const handleLogout = async () => {
+    await api.auth.logout();
+    toast({
+      title: 'تم تسجيل الخروج',
+      description: 'تم تسجيل خروجك بنجاح',
+    });
+    navigate('/login');
+  };
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -43,7 +57,7 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           
-          <div className="hidden md:block">
+          <div className="hidden md:flex md:items-center">
             <div className="ml-10 flex items-baseline space-x-4 rtl:space-x-reverse">
               {navLinks.map((link) => (
                 <Link
@@ -60,6 +74,16 @@ const Navbar: React.FC = () => {
                 </Link>
               ))}
             </div>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="mr-4 flex items-center gap-1 text-gray-600 hover:text-red-600"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>تسجيل الخروج</span>
+            </Button>
           </div>
           
           <div className="md:hidden">
@@ -99,6 +123,15 @@ const Navbar: React.FC = () => {
               <span>{link.name}</span>
             </Link>
           ))}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleLogout}
+            className="w-full justify-start px-3 py-2 rounded-md text-base font-medium flex items-center gap-2 text-gray-700 hover:text-red-600"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>تسجيل الخروج</span>
+          </Button>
         </div>
       </div>
     </nav>

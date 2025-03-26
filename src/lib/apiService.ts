@@ -31,7 +31,7 @@ export const handleApiError = (error: any): never => {
       errorMessage = error.response.data?.message || `خطأ: ${error.response.status}`;
     } else if (error.request) {
       // The request was made but no response was received
-      errorMessage = 'لم يتم استلام استجابة من الخادم';
+      errorMessage = 'لم يتم استلام استجابة من الخادم، تأكد من تشغيل الخادم على المنفذ 2000';
     } else {
       // Something happened in setting up the request that triggered an Error
       errorMessage = `خطأ في الطلب: ${error.message}`;
@@ -48,6 +48,7 @@ export const productsApiService = {
   // Get all products
   getAll: async (): Promise<ApiResponse<Product[]>> => {
     try {
+      console.log('Fetching products from:', API_CONFIG.BASE_URL);
       const response = await apiClient.get<ApiResponse<Product[]>>('/products');
       return response.data;
     } catch (error) {
@@ -78,9 +79,11 @@ export const productsApiService = {
   // Add new product
   create: async (product: Omit<Product, 'id'>): Promise<ApiResponse<Product>> => {
     try {
+      console.log('Creating product with data:', product);
       const response = await apiClient.post<ApiResponse<Product>>('/products', product);
       return response.data;
     } catch (error) {
+      console.error('Error creating product:', error);
       return handleApiError(error);
     }
   },
@@ -88,9 +91,11 @@ export const productsApiService = {
   // Update product
   update: async (id: string, product: Partial<Product>): Promise<ApiResponse<Product>> => {
     try {
+      console.log(`Updating product ${id} with data:`, product);
       const response = await apiClient.put<ApiResponse<Product>>(`/products/${id}`, product);
       return response.data;
     } catch (error) {
+      console.error(`Error updating product ${id}:`, error);
       return handleApiError(error);
     }
   },
@@ -98,9 +103,11 @@ export const productsApiService = {
   // Delete product
   delete: async (id: string): Promise<ApiResponse<boolean>> => {
     try {
+      console.log(`Deleting product ${id}`);
       const response = await apiClient.delete<ApiResponse<boolean>>(`/products/${id}`);
       return response.data;
     } catch (error) {
+      console.error(`Error deleting product ${id}:`, error);
       return handleApiError(error);
     }
   }

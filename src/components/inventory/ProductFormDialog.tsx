@@ -36,7 +36,12 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       onOpenChange(false);
     },
     onError: (error) => {
-      toast.error(`فشلت إضافة المنتج: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'خطأ غير معروف، تأكد من تشغيل الخادم على المنفذ 2000';
+      
+      toast.error(`فشلت إضافة المنتج: ${errorMessage}`);
+      console.error('Add product error:', error);
     }
   });
   
@@ -49,7 +54,12 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       onOpenChange(false);
     },
     onError: (error) => {
-      toast.error(`فشل تحديث المنتج: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'خطأ غير معروف، تأكد من تشغيل الخادم على المنفذ 2000';
+      
+      toast.error(`فشل تحديث المنتج: ${errorMessage}`);
+      console.error('Update product error:', error);
     }
   });
   

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import ProductForm from './ProductForm';
 import { Product } from './ProductCard';
-import { productsApi } from '@/lib/api';
+import api from '@/lib/apiService';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   const isEditing = !!initialData;
   
   const addProductMutation = useMutation({
-    mutationFn: (product: Omit<Product, 'id'>) => productsApi.add(product),
+    mutationFn: (product: Omit<Product, 'id'>) => api.products.create(product),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('تمت إضافة المنتج بنجاح');
@@ -42,7 +42,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   
   const updateProductMutation = useMutation({
     mutationFn: ({ id, product }: { id: string; product: Partial<Product> }) =>
-      productsApi.update(id, product),
+      api.products.update(id, product),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('تم تحديث المنتج بنجاح');

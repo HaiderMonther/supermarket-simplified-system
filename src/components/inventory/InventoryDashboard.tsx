@@ -1,13 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Package, Filter, SortAsc, SortDesc, Grid, List, PlusCircle, 
-  Search, AlertTriangle, Loader2
+  Package, Filter, AlertTriangle, Loader2, 
+  Search, Grid, List, PlusCircle
 } from 'lucide-react';
 import ProductCard, { Product } from './ProductCard';
 import AnimatedButton from '../ui/AnimatedButton';
 import { toast } from 'sonner';
-import { productsApi } from '@/lib/api';
+import api from '@/lib/apiService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ProductFormDialog from './ProductFormDialog';
 
@@ -28,7 +27,7 @@ const InventoryDashboard: React.FC = () => {
     error
   } = useQuery({
     queryKey: ['products'],
-    queryFn: productsApi.getAll
+    queryFn: api.products.getAll
   });
 
   // تهيئة المنتجات من الاستجابة
@@ -38,7 +37,7 @@ const InventoryDashboard: React.FC = () => {
   
   // إعداد mutations لحذف المنتجات
   const deleteProductMutation = useMutation({
-    mutationFn: (id: string) => productsApi.delete(id),
+    mutationFn: (id: string) => api.products.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('تم حذف المنتج بنجاح');

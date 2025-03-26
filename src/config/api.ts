@@ -1,7 +1,7 @@
 
 // API configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:5000/api', // Default development URL
+  BASE_URL: 'http://localhost:2000/api', // Updated backend URL
   TIMEOUT: 10000, // 10 seconds timeout
 };
 
